@@ -1,0 +1,23 @@
+from flask import Flask, jsonify
+from flask_httpauth import HTTPBasicAuth
+
+app = Flask(__name__)
+auth = HTTPBasicAuth()
+
+users = {
+    "test": "123456"
+}
+
+@auth.verify_password
+def verify_password(username, password):
+    if username in users and users[username] == password:
+        return username
+    return None
+
+@app.route('/hello', methods=['GET'])
+@auth.login_required
+def hello_world():
+    return jsonify(message="Hello, World!")
+
+if __name__ == '__main__':
+    app.run(debug=True)
