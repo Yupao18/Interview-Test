@@ -1,0 +1,52 @@
+    import json
+    import re
+    from datasets import load_dataset
+    from time import time
+
+    # Load the dataset
+    dataset = load_dataset('AdaptLLM/finance-tasks', 'headline')
+
+    def parse_questions(input_text):
+        qa_pairs = []
+        questions = re.split(r'(?<=\?)\s*', input_text)
+        for q in questions:
+            if q:
+                parts = re.split(r'(?<=\?)', q, maxsplit=1)
+                if len(parts) == 2:
+                    question = parts[0].strip()
+                    answer = parts[1].strip()
+                    qa_pairs.append((question, answer))
+        return qa_pairs
+
+    def transform_dataset(dataset):
+        transformed_data = []
+        id_counter = 1
+
+        for entry in dataset['train']:
+            input_text = entry['input']
+            qa_pairs = parse_questions(input_text)
+
+            for question, answer in qa_pairs:
+                transformed_data.append({
+                    "id": f"qa_{id_counter}",
+                    "Question": question,
+                    "Answer": answer
+                })
+                id_counter += 1
+
+        return transformed_data
+
+    # Start the transformation process
+    start_time = time()
+    transformed_data = transform_dataset(dataset)
+    end_time = time()
+
+    # Save the transformed data to a JSON file
+    with open('transformed_headlines.json', 'w') as f:
+        json.dump(transformed_data, f, indent=4)
+
+    # Print the statistics
+    total_pairs = len(transformed_data)
+    processing_time = end_time - start_time
+    print(f"Total number of question-answer pairs extracted: {total_pairs}")
+    print(f"Time taken to complete the transformation process: {processing_time:.2f} seconds")
